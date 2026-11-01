@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account profile, earnings balances, referral statistics, and streak information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "balance": { "type": "number" },
+        "todayEarnings": { "type": "number" },
+        "totalEarnings": { "type": "number" },
+        "referralCode": { "type": "string", "maxLength": 20 },
+        "referredBy": { "type": "string", "maxLength": 50 },
+        "referralCount": { "type": "number" },
+        "referralEarnings": { "type": "number" },
+        "lastCheckInDate": { "type": "string", "maxLength": 20 },
+        "checkInStreak": { "type": "number" },
+        "isProfileComplete": { "type": "boolean" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "updatedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["uid", "name", "email", "balance"]
+    },
+    "Withdrawal": {
+      "title": "Withdrawal",
+      "description": "Withdrawal cashout requests sent to Easypaisa, JazzCash, or Bank.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userName": { "type": "string", "maxLength": 100 },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["Easypaisa", "JazzCash", "Bank"] },
+        "accountTitle": { "type": "string", "maxLength": 100 },
+        "accountNumber": { "type": "string", "maxLength": 50 },
+        "bankName": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["pending", "approved", "completed", "rejected"] },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "userId", "amount", "method", "accountTitle", "accountNumber", "status"]
+    },
+    "TaskLog": {
+      "title": "TaskLog",
+      "description": "Records of completed earning tasks (ads, quizzes, check-ins).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "taskType": { "type": "string", "enum": ["ad", "quiz", "profile", "checkin", "referral"] },
+        "reward": { "type": "number" },
+        "description": { "type": "string", "maxLength": 200 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "userId", "taskType", "reward"]
+    },
+    "Referral": {
+      "title": "Referral",
+      "description": "Record of a referred user under a referrer's network with 10% lifetime commission.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "referrerId": { "type": "string", "maxLength": 128 },
+        "referredUserId": { "type": "string", "maxLength": 128 },
+        "referredName": { "type": "string", "maxLength": 100 },
+        "commissionEarned": { "type": "number" },
+        "joinedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "referrerId", "referredUserId", "referredName"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Primary user profile, balance, and stats."
+    },
+    "/users/{userId}/withdrawals/{withdrawalId}": {
+      "schema": { "$ref": "#/entities/Withdrawal" },
+      "description": "Withdrawal request submitted by user."
+    },
+    "/users/{userId}/taskLogs/{logId}": {
+      "schema": { "$ref": "#/entities/TaskLog" },
+      "description": "Logs of tasks completed by user."
+    },
+    "/users/{userId}/referrals/{refId}": {
+      "schema": { "$ref": "#/entities/Referral" },
+      "description": "List of referrals invited by user."
+    }
+  }
+}

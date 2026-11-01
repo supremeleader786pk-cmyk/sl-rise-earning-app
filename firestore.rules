@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUser(data) {
+      return data.uid is string && data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+             data.balance is number && data.balance >= 0;
+    }
+
+    function isValidWithdrawal(data, userId) {
+      return data.id is string && isValidId(data.id) &&
+             data.userId is string && data.userId == userId &&
+             data.amount is number && data.amount >= 500 &&
+             data.method in ['Easypaisa', 'JazzCash', 'Bank'] &&
+             data.accountTitle is string && data.accountTitle.size() > 0 && data.accountTitle.size() <= 100 &&
+             data.accountNumber is string && data.accountNumber.size() > 0 && data.accountNumber.size() <= 50 &&
+             data.status in ['pending', 'approved', 'completed', 'rejected'];
+    }
+
+    function isValidTaskLog(data, userId) {
+      return data.id is string && isValidId(data.id) &&
+             data.userId is string && data.userId == userId &&
+             data.taskType in ['ad', 'quiz', 'profile', 'checkin', 'referral'] &&
+             data.reward is number && data.reward >= 0 && data.reward <= 10000;
+    }
+
+    function isValidReferral(data, userId) {
+      return data.id is string && isValidId(data.id) &&
+             data.referrerId is string && data.referrerId == userId &&
+             data.referredUserId is string &&
+             data.referredName is string && data.referredName.size() <= 100;
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    // User profile
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && incoming().uid == existing().uid;
+      allow delete: if false;
+
+      // Sub-collections under user
+      match /withdrawals/{withdrawalId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(withdrawalId) &&
+                         isValidWithdrawal(incoming(), userId) &&
+                         incoming().status == 'pending';
+        allow update: if isOwner(userId) && existing().status == 'pending' &&
+                         isValidWithdrawal(incoming(), userId);
+        allow delete: if false;
+      }
+
+      match /taskLogs/{logId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(logId) && isValidTaskLog(incoming(), userId);
+        allow update, delete: if false;
+      }
+
+      match /referrals/{refId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(refId) && isValidReferral(incoming(), userId);
+        allow update: if isOwner(userId) && isValidReferral(incoming(), userId);
+        allow delete: if false;
+      }
+    }
+  }
+}

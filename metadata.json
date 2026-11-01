@@ -1,0 +1,6 @@
+{
+  "name": "Supreme Leader RISE",
+  "description": "Premium black and gold Halal earning platform with daily check-ins, tasks, quizzes, 10% referral commission, and instant Easypaisa/JazzCash/Bank withdrawals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
